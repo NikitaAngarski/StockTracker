@@ -8,4 +8,5 @@
       "adjusted close": "146.0267",
       "volume": "13719451",
       "dividend amount": "0.0000"
-   },
+   }
+]
