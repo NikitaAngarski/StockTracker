@@ -2,6 +2,7 @@
 import com.google.gson.annotations.SerializedName; 
 
 public class GlobalQuote {
+   @SerializedName("01. symbol") public String symbol; 
    @SerializedName("02. open") public String open;
    @SerializedName("03. high") public String high; 
    @SerializedName("04. low") public String low;

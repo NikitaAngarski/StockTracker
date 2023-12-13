@@ -26,6 +26,8 @@ import java.util.GregorianCalendar;
 import java.util.ArrayList; 
 import java.util.Date; 
 import java.text.SimpleDateFormat; 
+import java.util.ResourceBundle; 
+import java.util.prefs.Preferences; 
 
 import javafx.fxml.Initializable; 
 import java.net.URL; 
@@ -34,7 +36,7 @@ import com.google.gson.GsonBuilder;
 import javafx.application.Platform; 
 
 
-public class Controller {
+public class Controller implements Initializable {
     
     @FXML
     private Label bigTitle;
@@ -79,6 +81,15 @@ public class Controller {
     private String openHolder;
     private String changeHolder;
     private String percentChangeHolder; 
+    private String tickerHolder; 
+    
+  public void initialize(URL location, ResourceBundle resources){
+      Preferences p = Preferences.userNodeForPackage(Controller.class); 
+      
+      searchQuery = "AAPL";
+      
+      updateStockData(searchQuery); 
+      }
    
    
    
@@ -165,7 +176,7 @@ public class Controller {
          
             System.out.println(searchQuery);
             
-            System.out.println(data.charAt(7)); 
+             
             
             
             
@@ -194,6 +205,7 @@ public class Controller {
             }
             else {
                
+               tickerHolder = this.stockData.globalQuote.symbol; 
                priceHolder = this.stockData.globalQuote.price;
                lowHolder = this.stockData.globalQuote.low;
                highHolder = this.stockData.globalQuote.high;
@@ -205,7 +217,7 @@ public class Controller {
                 @Override
                  public void run() {
                  
-                     bigTitle.setText(searchQuery);
+                     bigTitle.setText(tickerHolder);
          
                      price.setText("Price: "+priceHolder); 
          
