@@ -1,1 +1,5 @@
+App: StockTracker
+Team: Nikita Angarski, Sahad Rafiuzzaman, William Lutz
+
 https://bit.ly/3ToTxB0
+https://github.com/NikitaAngarski/finalProjectCS111.git
