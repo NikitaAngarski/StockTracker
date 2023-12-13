@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="445.0" prefWidth="371.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller">
+   <children>
+      <Label layoutX="14.0" layoutY="14.0" prefHeight="17.0" prefWidth="39.0" text="Search" />
+      <Button fx:id="goButton" layoutX="214.0" layoutY="10.0" mnemonicParsing="false" onAction="#searchStock" text="Enter" />
+      <Label fx:id="bigTitle" alignment="CENTER" layoutX="124.0" layoutY="52.0" prefHeight="38.0" prefWidth="124.0" text="AAPL" textAlignment="CENTER">
+         <font>
+            <Font size="24.0" />
+         </font>
+      </Label>
+      <Label fx:id="open" layoutX="53.0" layoutY="106.0" prefHeight="17.0" prefWidth="124.0" text="Open: " />
+      <Label fx:id="high" layoutX="53.0" layoutY="140.0" text="High: " />
+      <Label fx:id="low" layoutX="55.0" layoutY="177.0" text="Low: " />
+      <Label fx:id="price" layoutX="55.0" layoutY="214.0" text="Current Price: " />
+      <Label fx:id="change" layoutX="55.0" layoutY="257.0" text="Change: " />
+      <Label fx:id="percentChange" layoutX="55.0" layoutY="300.0" text="Percent Change: " />
+      <TextField fx:id="searchBox" layoutX="55.0" layoutY="10.0" onAction="#searchStock" />
+   </children>
+</AnchorPane>
