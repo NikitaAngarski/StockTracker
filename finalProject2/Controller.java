@@ -35,8 +35,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import javafx.application.Platform; 
 
+import org.json.simple.JSONObject;
+
 
 public class Controller implements Initializable {
+
+    @FXML
+    private AreaChart chart; 
     
     @FXML
     private Label bigTitle;
@@ -69,12 +74,16 @@ public class Controller implements Initializable {
     
     private HttpClient client; 
     
-    //private XYChart.Series series; 
+    private XYChart.Series series; 
     
+    //a string representing the user's input 
     private String searchQuery; 
     
     private Date today; 
     
+    //the below are placeholders for the strings that the gson objects represent
+    //each of these is declared and instantiated separately for the Platform.runLater 
+    //function so that it will use these placeholders to change the UI 
     private String priceHolder;
     private String lowHolder;
     private String highHolder;
@@ -83,6 +92,11 @@ public class Controller implements Initializable {
     private String percentChangeHolder; 
     private String tickerHolder; 
     
+    
+    
+  //This is the initialization method that starts up as soon as 
+  //the app is up. As shown, the searchQuery is set to AAPL so that
+  //upon opening the app, the user is automatically shown Apple stock data  
   public void initialize(URL location, ResourceBundle resources){
       Preferences p = Preferences.userNodeForPackage(Controller.class); 
       
@@ -92,7 +106,10 @@ public class Controller implements Initializable {
       }
    
    
-   
+   //searchStock is connected directly to the goButton 
+   //so this executes every time that the app starts up, 
+   //very minimal method 
+   //
    public void searchStock(){  
       searchQuery = searchBox.getText(); 
       updateStockData(searchQuery);
@@ -100,7 +117,7 @@ public class Controller implements Initializable {
       
 
       }
-   /*   
+  
    public void makeChart(){
       clearChart(); 
       series = new XYChart.Series(); 
@@ -127,8 +144,9 @@ public class Controller implements Initializable {
       public void clearChart() {
          chart.getData().removeAll(series); 
          }
-      */ 
-         
+     
+       
+      //This is the main method that executes from the app.    
       public void updateStockData(String symbol) {
       
          if (this.client == null){
@@ -137,19 +155,35 @@ public class Controller implements Initializable {
          
          try {
          
-            System.out.println(System.getenv("APIKEY"));
-            
-            HttpRequest requestWeekly = HttpRequest.newBuilder()
+            //this HttpRequest object is calling to the api every time the user searches a new stock
+            //You can see the symbol String is used to call the api for the stock the user would like
+            //to see the info for
+            HttpRequest requestData = HttpRequest.newBuilder()
                                              .uri(new URI("https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol="+symbol+"&apikey="+System.getenv("APIKEY")))
                                              .GET()
                                              .build();
                                              
-            client.sendAsync(requestWeekly, BodyHandlers.ofString())
+            client.sendAsync(requestData, BodyHandlers.ofString())
                   .thenApply(HttpResponse::body)
                   .thenAccept(this::processStock);
+                  
+                  
+            HttpRequest requestTimeSeries = HttpRequest.newBuilder()
+                                                       .uri(new URI("https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY&symbol="+symbol+"&apikey="+System.getenv("APIKEY")))
+                                                       .GET()
+                                                       .build(); 
+            
+            client.sendAsync(requestTimeSeries, BodyHandlers.ofString())
+                  .thenApply(HttpResponse::body)
+                  .thenAccept(this::processTimeSeries); 
+                  
+                  
+            
             
             }
             
+            //If we do experience an error, the big Title where the stock ticker is will be turned into 
+            // "Error" 
             catch(URISyntaxException e){
                System.out.println("Issue with request"); 
                bigTitle.setText("Error"); 
@@ -159,19 +193,23 @@ public class Controller implements Initializable {
          
          }
          
-     
+         protected void processTimeSeries(String data){
+            System.out.println(data); 
+            }
+         
+         //this method within the method parses the json output and makes new pojo's with it. 
+         //the string of data (json) is passed to the method to then make objects and manipulate them. 
          protected void processStock(String data){
          
-            this.today = new Date(); 
-            
+            //checking to see what the data is 
             System.out.println(data); 
             
             Gson gson1 = new Gson(); 
-            
+            //the gson object parses through the json to make POJO's 
             this.stockData = gson1.fromJson(data, StockData.class); 
             
             
-            
+            //we take the searchQuery and set it to the searchBox's text. 
             searchQuery = searchBox.getText();
          
             System.out.println(searchQuery);
@@ -180,7 +218,11 @@ public class Controller implements Initializable {
             
             
             
-            
+            //this runnable method checks to see if the data is not there for some reason. 
+            //The if statement here checks if the 8th character of the output is a G 
+            //for Global Quote, which is the output we're looking for. If we are given 
+            //an error message that says "please pay for an upgraded key" or "Error stock doesn't
+            //exist", this will let the user know by changing everything into an error in the UI
             if(data.charAt(7) != 'G' || this.stockData.globalQuote.price == null){
                Platform.runLater(new Runnable() {
                 @Override
@@ -204,6 +246,9 @@ public class Controller implements Initializable {
             
             }
             else {
+            
+            //upon a successful retrieval and processing, the placeholders are set
+            //to the pojo's created via the gson object. 
                
                tickerHolder = this.stockData.globalQuote.symbol; 
                priceHolder = this.stockData.globalQuote.price;
@@ -213,6 +258,9 @@ public class Controller implements Initializable {
                changeHolder = this.stockData.globalQuote.change;
                percentChangeHolder = this.stockData.globalQuote.percentChange;
             
+            //then these placeholders are used to set the all the UI's variables 
+            //from Platform.runLater, which separates the thread from the backend 
+            //to the frontend
                Platform.runLater(new Runnable() {
                 @Override
                  public void run() {
@@ -232,7 +280,8 @@ public class Controller implements Initializable {
                      percentChange.setText("Percent Change: "+percentChangeHolder); 
                                  }
                         
-                            });
+                           }
+                     );
                      
              }
      

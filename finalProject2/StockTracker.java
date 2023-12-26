@@ -16,12 +16,16 @@ public class StockTracker extends Application {
       
       @Override
       public void start(Stage stage) throws Exception {
+         //setting title
          stage.setTitle("StockTracker"); 
       
+         //connecting root to the fxml file that I have in the folder 
          Parent root = FXMLLoader.load(getClass().getResource("StockTracker.fxml"));
         
-         Scene scene = new Scene(root, 400, 400);
+         //making the scene and specifying the ratio of px
+         Scene scene = new Scene(root, 700, 400);
         
+         
          stage.setScene(scene); 
                   
          stage.show(); 
