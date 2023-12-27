@@ -28,12 +28,19 @@ import java.util.Date;
 import java.text.SimpleDateFormat; 
 import java.util.ResourceBundle; 
 import java.util.prefs.Preferences; 
+import java.util.ArrayList; 
+import java.util.Map;
+import java.util.LinkedHashMap; 
+import java.util.List; 
+import java.util.Set;  
+import java.util.Collections; 
 
 import javafx.fxml.Initializable; 
 import java.net.URL; 
 import com.google.gson.Gson; 
 import com.google.gson.GsonBuilder;
 import javafx.application.Platform; 
+import java.lang.Number; 
 
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
@@ -78,6 +85,9 @@ public class Controller implements Initializable {
     @FXML
     private TextField searchBox;
     
+    @FXML
+    private NumberAxis yAxis; 
+    
     private StockData stockData; 
     
     private HttpClient client; 
@@ -87,7 +97,11 @@ public class Controller implements Initializable {
     //a string representing the user's input 
     private String searchQuery; 
     
-    private Date today; 
+    private LinkedHashMap<String, Double> tsMap; 
+    
+    private JSONObject time; 
+    
+    private String weeklyPrice; 
     
     //the below are placeholders for the strings that the gson objects represent
     //each of these is declared and instantiated separately for the Platform.runLater 
@@ -107,14 +121,11 @@ public class Controller implements Initializable {
   //upon opening the app, the user is automatically shown Apple stock data  
   public void initialize(URL location, ResourceBundle resources){
       Preferences p = Preferences.userNodeForPackage(Controller.class); 
+       
       
       searchQuery = "AAPL";
       
-      updateStockData(searchQuery); 
-      
-      makeChart(); 
-      
-      getWeeks("2023-12-22"); 
+      updateStockData(searchQuery);  
       }
    
    
@@ -123,40 +134,69 @@ public class Controller implements Initializable {
    //very minimal method 
    //
    public void searchStock(){  
+      chart.setAnimated(true); 
       searchQuery = searchBox.getText(); 
       updateStockData(searchQuery);
-      
-      makeChart(); 
+       
        
       
 
       }
   
-   public void makeChart(){
+   public void makeChart(LinkedHashMap map){
+      
       clearChart(); 
       series = new XYChart.Series(); 
-      series.getData().add(new XYChart.Data("W1", 154));
-      series.getData().add(new XYChart.Data("W2", 54));
-      series.getData().add(new XYChart.Data("W3", 124));
-      series.getData().add(new XYChart.Data("W4", 54));
-      series.getData().add(new XYChart.Data("W5", 34));
-      series.getData().add(new XYChart.Data("W6", 13));
-      series.getData().add(new XYChart.Data("W7", 65));
-      series.getData().add(new XYChart.Data("W8", 87));
-      series.getData().add(new XYChart.Data("W9", 54));
-      series.getData().add(new XYChart.Data("W10", 23));
-      series.getData().add(new XYChart.Data("W11", 51));
-      series.getData().add(new XYChart.Data("W12", 112));
-      series.getData().add(new XYChart.Data("W13", 74));
-
- 
-      chart.getData().addAll(series); 
+      //must set autoranging to false in order to later have the ability to change the 
+      //upper and lower bound limits 
+      yAxis.setAutoRanging(false); 
+      
+      List<String> mapKeys = new ArrayList<String>(map.keySet());
+            
+            //reversing the list of keys to arrange them in chronological order 
+            Collections.reverse(mapKeys); 
+            
+            
+            //making the chart is easy with the linkedHashMap, because in one 
+            //line you can input the key and the value with the same key
+            //the only challenge being that I had to reverse the list of keys 
+            //to make them chronological
+            for (String revKey: mapKeys) {
+               System.out.println(revKey +" : "+map.get(revKey));
+               series.getData().add(new XYChart.Data(revKey, map.get(revKey))); 
+               }
+            //finding min and max of the values to make a buffer 
+            //and set upper and lower bound values of the y axis    
+            Double min = (Double)Collections.min(map.values());
+            Double max = (Double)Collections.max(map.values());
+            
+            //buffer is somewhat arbitrary, but it takes into account 
+            //min and max values for the series and sets a bit of a buffer 
+            //around them to make the graph more useful and more visually appealing 
+            Double buffer = (max - min)/2; 
+            
+            yAxis.setLowerBound(min - buffer); 
+            yAxis.setUpperBound(max + buffer);  
+               
+            chart.getData().addAll(series); 
       }
       
-      
+      public void fakeSeries() {
+         chart.setAnimated(true); 
+         yAxis.setLowerBound(0.0); 
+         yAxis.setUpperBound(100.0);
+         series = new XYChart.Series(); 
+         for (int i = 1; i < 14; i++) {
+            series.getData().add(new XYChart.Data(""+i+"", 0.0)); 
+            }
+         chart.getData().addAll(series); 
+         }
       
       public void clearChart() {
-         chart.getData().removeAll(series); 
+         chart.getData().clear();
+         
+          
+         
          }
      
        
@@ -209,21 +249,56 @@ public class Controller implements Initializable {
          
          protected void processTimeSeries(String data){
             //System.out.println(data);
+            //Creates some JSON Objects that layer on top of one another to get the startdate from the 
+            //API output 
+            JSONObject output = (JSONObject)JSONValue.parse(data); 
+            JSONObject metaData = (JSONObject)output.get("Meta Data");
+            JSONObject timeSeries = (JSONObject)output.get("Weekly Time Series"); 
+            String date = (String)metaData.get("3. Last Refreshed");
+            
+            //this method makes a linkedHashMap to copy the 
+            tsMap = new LinkedHashMap<>(); 
+             
+            
+            for (String s: getWeeks(date)){ 
+               time = (JSONObject)timeSeries.get(s); 
+               weeklyPrice = (String)time.get("4. close"); 
+               tsMap.put(s, Double.parseDouble(weeklyPrice)); 
+                
+               }
+               
+            Platform.runLater(new Runnable() {
+                @Override
+                 public void run(){ 
+                 
+                 makeChart(tsMap);
+                 }
+             }
+                              );
+             
+             
+            
            
              
             }
             
-            
+         // This is a static method I developed with the joda time 
+         // library to make an array of dates with the 
+         // yyyy-MM-dd format that will allow me to access the JSON
+         // objects with the same key.   
          protected static String[] getWeeks(String startDate){
          String[] weeks = new String[13]; 
          DateTimeFormatter format = DateTimeFormat.forPattern("yyyy-MM-dd"); 
          DateTime start = format.parseDateTime(startDate); 
          String dateToString; 
          
-         weeks[0] = startDate; 
+         //the start date is what the API tells me is the last refreshed day
+         //which is always the first data point of the time series
+         weeks[0] = startDate;
+         //the start date is offset by 1 day so that if the first day is a friday 
+         // it will not be put twice into the map  
          start = start.minusDays(1); 
-         
-         
+         //This makes the map friday by friday 
          int i = 1;
          while (i < weeks.length) {
             if (start.getDayOfWeek() == DateTimeConstants.FRIDAY) {
@@ -232,8 +307,7 @@ public class Controller implements Initializable {
                }
             start = start.minusDays(1); 
             }
-          for(String s : weeks)
-            System.out.println(s); 
+    
           return weeks; 
          }
          
@@ -268,19 +342,22 @@ public class Controller implements Initializable {
                 @Override
                  public void run() {
                  
-                        bigTitle.setText("Error");
+                        bigTitle.setText("Invalid Query");
          
-                        price.setText("Price: error"); 
+                        price.setText("Price: "); 
          
-                        low.setText("Low: error"); 
+                        low.setText("Low: "); 
          
-                        high.setText("High: error"); 
+                        high.setText("High: "); 
                
-                        open.setText("Open: error"); 
+                        open.setText("Open: "); 
             
-                        change.setText("Change: error");
+                        change.setText("Change: ");
                
-                        percentChange.setText("Percent Change: error");
+                        percentChange.setText("Percent Change: ");
+                        
+                        clearChart(); 
+                        fakeSeries();  
                      }
                  });
             

@@ -23,7 +23,7 @@ public class StockTracker extends Application {
          Parent root = FXMLLoader.load(getClass().getResource("StockTracker.fxml"));
         
          //making the scene and specifying the ratio of px
-         Scene scene = new Scene(root, 700, 400);
+         Scene scene = new Scene(root, 700, 500);
         
          
          stage.setScene(scene); 
