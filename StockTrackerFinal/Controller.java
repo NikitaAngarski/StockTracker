@@ -180,7 +180,7 @@ public class Controller implements Initializable {
                
             chart.getData().addAll(series); 
       }
-      
+      //test method
       public void fakeSeries() {
          chart.setAnimated(true); 
          yAxis.setLowerBound(0.0); 
